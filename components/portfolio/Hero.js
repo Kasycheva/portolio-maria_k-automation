@@ -3,8 +3,27 @@ import { useEffect, useRef, useState } from 'react';
 import { useLang } from './LangContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const PROFILE_LINES_EN = [
+  { i: '01', text: "I don't just automate tasks — I fix the systems behind them.", hl: [] },
+  { i: '02', text: 'With over 14 years of operational experience and a transition into AI-powered automation, I build workflows that actually work: n8n, Make.com, AI agents, integrations, and full-stack solutions when needed.', hl: ['14 years','AI-powered automation','n8n','Make.com','AI agents','integrations'] },
+  { i: '03', text: "My advantage? I've personally experienced the operational challenges I now help businesses solve.", hl: [] },
+  { i: '04', text: 'Open to freelance projects and new opportunities.', hl: [] },
+];
+const PROFILE_LINES_UA = [
+  { i: '01', text: 'Я не просто автоматизую задачі — я виправляю системи, що стоять за ними.', hl: [] },
+  { i: '02', text: 'Понад 14 років операційного досвіду та перехід у AI-автоматизацію: будую воркфлоу, які реально працюють — n8n, Make.com, AI-агенти, інтеграції та full-stack рішення там, де треба.', hl: ['14 років','AI-автоматизацію','n8n','Make.com','AI-агенти','інтеграції'] },
+  { i: '03', text: 'Моя перевага? Я особисто пройшла через ті операційні виклики, які тепер допомагаю вирішувати бізнесам.', hl: [] },
+  { i: '04', text: 'Відкрита до freelance-проєктів та нових можливостей.', hl: [] },
+];
+
+function highlight(text, words) {
+  if (!words?.length) return text;
+  const re = new RegExp('(' + words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'g');
+  return text.split(re).map((s, i) => words.includes(s) ? <span key={i} className="text-[#c5ff00]">{s}</span> : <span key={i}>{s}</span>);
+}
+
 export default function Hero() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const targetTimeRef = useRef(0);
@@ -12,8 +31,9 @@ export default function Hero() {
   const lastAppliedRef = useRef(-1);
   const [progress, setProgress] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
+  const [continueClicked, setContinueClicked] = useState(false);
 
-  // Robust video loading + unlock seeking
+  // ----- Video load -----
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -31,7 +51,7 @@ export default function Hero() {
     };
   }, []);
 
-  // Scroll -> set TARGET progress + target video time. (Updates on every scroll event)
+  // ----- Scroll -> target progress + target video time -----
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -43,9 +63,7 @@ export default function Hero() {
       setProgress(p);
       const v = videoRef.current;
       if (v && v.duration && !isNaN(v.duration)) {
-        // Map 0..1 -> 0..duration with a tiny ease-out at the end so it lands cleanly on last frame
-        const vp = Math.max(0, Math.min(1, p));
-        targetTimeRef.current = v.duration * vp;
+        targetTimeRef.current = v.duration * Math.max(0, Math.min(1, p));
       }
     };
     onScroll();
@@ -57,15 +75,13 @@ export default function Hero() {
     };
   }, []);
 
-  // RAF loop: smoothly LERP video.currentTime toward target. Decoupled from scroll = buttery smooth.
+  // ----- RAF lerp loop for buttery smooth video.currentTime -----
   useEffect(() => {
     let raf = 0;
     const loop = () => {
       const v = videoRef.current;
       if (v && v.duration) {
-        // Smooth interpolation factor; lower = silkier (with more lag), higher = snappier
         currentTimeRef.current += (targetTimeRef.current - currentTimeRef.current) * 0.18;
-        // Only push to video if delta worth a paint
         if (Math.abs(currentTimeRef.current - lastAppliedRef.current) > 0.012) {
           try { v.currentTime = currentTimeRef.current; lastAppliedRef.current = currentTimeRef.current; } catch (e) {}
         }
@@ -76,27 +92,69 @@ export default function Hero() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  // ----- Gate: at progress=1, lock body scroll until Continue clicked -----
+  const [nearEnd, setNearEnd] = useState(false);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const check = () => {
+      const rect = el.getBoundingClientRect();
+      // Trigger gate ONLY when section bottom is right at viewport bottom (end of Hero)
+      // NOT when section is way past (rect.bottom negative = scrolled far below)
+      const inGateZone = rect.bottom <= window.innerHeight + 80 && rect.bottom > window.innerHeight * 0.4;
+      setNearEnd(inGateZone);
+    };
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      window.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, []);
+  const atEnd = nearEnd && !continueClicked;
+  useEffect(() => {
+    if (!atEnd) return;
+    if (typeof window !== 'undefined' && window.__lenis) window.__lenis.stop();
+    document.body.style.overflow = 'hidden';
+    return () => {
+      if (typeof window !== 'undefined' && window.__lenis) window.__lenis.start();
+      document.body.style.overflow = '';
+    };
+  }, [atEnd]);
+
+  const handleContinue = () => {
+    setContinueClicked(true);
+    // Unlock + smooth scroll to About
+    if (typeof window !== 'undefined' && window.__lenis) window.__lenis.start();
+    document.body.style.overflow = '';
+    setTimeout(() => {
+      const a = document.getElementById('about');
+      if (a) a.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  };
+
   const intro = progress < 0.1;
   const nav = progress >= 0.1 && progress < 0.78;
   const ready = progress >= 0.78;
+  const lines = lang === 'ua' ? PROFILE_LINES_UA : PROFILE_LINES_EN;
 
   return (
     <section id="top" ref={containerRef} className="relative w-full" style={{ height: '350vh' }}>
       <div className="sticky top-0 h-screen w-full overflow-hidden bg-[#0a0a0a]">
         <div className="absolute inset-0 grid-bg opacity-40" />
 
-        {/* ONE video element — its last frame already shows sunglasses, no image crossfade jumps */}
+        {/* HIGH-QUALITY video */}
         <div className="absolute inset-0 flex">
           <div className="relative h-full w-full md:w-[58%]">
             <video
               ref={videoRef}
-              src="/assets/maria-video-opt.mp4"
+              src="/assets/maria-video-hq.mp4"
               muted playsInline preload="auto"
               poster="/assets/maria-no-sunglasses.jpg"
               className="absolute inset-0 w-full h-full object-cover object-left"
               style={{ opacity: videoReady ? 1 : 0, transition: 'opacity .4s' }}
             />
-            {/* Subtle fallback while metadata loads */}
             <img src="/assets/maria-no-sunglasses.jpg" alt=""
               aria-hidden
               className="absolute inset-0 w-full h-full object-cover object-left pointer-events-none"
@@ -105,7 +163,7 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Right content layer */}
+        {/* Right content layer — intro / nav / ready states (UNCHANGED for smoothness) */}
         <div className="relative z-10 h-full w-full flex flex-col justify-between px-6 md:px-12 lg:px-20 pt-28 pb-10">
           <div />
           <div className="md:ml-auto md:w-[48%] lg:w-[44%] min-h-[320px]">
@@ -164,12 +222,65 @@ export default function Hero() {
             </div>
           </div>
         </div>
+
+        {/* End of sticky inner */}
       </div>
+
+      {/* ===== GATE OVERLAY at 100% — rendered as a FIXED overlay outside sticky to always cover viewport ===== */}
+      <AnimatePresence>
+        {atEnd && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45 }}
+            className="fixed inset-0 z-30 flex items-center justify-end px-6 md:px-12 lg:px-20 pointer-events-none"
+          >
+            {/* Right column content (so it lines up with hero's right column) */}
+            <div className="md:w-[52%] lg:w-[48%] max-w-xl pointer-events-auto">
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5 }}>
+                <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-4 flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#c5ff00] animate-pulse" /> ONLINE
+                </div>
+                <div className="rounded-md border border-[#c5ff00]/40 px-4 py-2 inline-flex items-center gap-2 font-mono text-base md:text-lg text-[#c5ff00]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#c5ff00] animate-pulse" /> &gt; SYSTEM READY
+                </div>
+              </motion.div>
+
+              <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.25, duration: 0.5 }}
+                className="mt-5 rounded-xl border border-white/10 bg-black/65 backdrop-blur-md overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10 bg-white/[0.03]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                  <span className="ml-2 font-mono text-xs text-white/60">maria_kasycheva.sh</span>
+                </div>
+                <div className="px-5 py-5 font-mono text-[14.5px] md:text-[15px] leading-[1.65]">
+                  {lines.map((l, idx) => (
+                    <motion.p key={l.i} initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 + idx * 0.18 }}
+                      className="flex gap-3 mb-3 last:mb-0">
+                      <span className="text-white/30 select-none">{l.i}</span>
+                      <span className="text-white/90">{highlight(l.text, l.hl)}</span>
+                    </motion.p>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.3, duration: 0.5 }}
+                className="mt-6 flex items-center justify-center">
+                <button onClick={handleContinue}
+                  className="group inline-flex items-center gap-3 border border-[#c5ff00]/60 hover:bg-[#c5ff00] hover:text-black text-white px-8 py-3.5 rounded-full font-mono text-sm tracking-[0.2em] transition">
+                  CONTINUE <motion.span animate={{ y: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.4 }}>↓</motion.span>
+                </button>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
 
-// Elongated transparent oval pill, slight float animation (like a jacket zipper pull)
 function ScrollPill() {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
