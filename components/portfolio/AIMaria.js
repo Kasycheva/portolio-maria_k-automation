@@ -19,13 +19,19 @@ export default function AIMaria() {
   ]);
   const [value, setValue] = useState('');
   const endRef = useRef(null);
+  const shouldAutoScrollRef = useRef(false);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [history]);
+  useEffect(() => {
+    if (!shouldAutoScrollRef.current) return;
+    shouldAutoScrollRef.current = false;
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [history]);
 
   const submit = (e) => {
     e.preventDefault();
     const cmd = value.trim().toLowerCase();
     if (!cmd) return;
+    shouldAutoScrollRef.current = true;
     if (cmd === 'clear') { setHistory([{ kind: 'sys', text: 'console cleared.' }]); setValue(''); return; }
     const out = RESPONSES[cmd] || `Unknown command — try: ${Object.keys(RESPONSES).join(', ')}`;
     setHistory((h) => [...h, { kind: 'in', text: cmd }, { kind: 'out', text: out }]);

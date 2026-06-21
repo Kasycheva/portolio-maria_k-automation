@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLang } from './LangContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,8 +10,35 @@ export default function Hero() {
   const targetTimeRef = useRef(0);
   const currentTimeRef = useRef(0);
   const lastAppliedRef = useRef(-1);
+  const unlockedRef = useRef(false);
+  const passedHeroRef = useRef(false);
+  const touchStartYRef = useRef(null);
   const [progress, setProgress] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
+
+  // Always begin the Hero from frame zero, including reloads and bfcache restores.
+  useLayoutEffect(() => {
+    const resetToStart = () => {
+      unlockedRef.current = false;
+      passedHeroRef.current = false;
+      targetTimeRef.current = 0;
+      currentTimeRef.current = 0;
+      lastAppliedRef.current = -1;
+      setUnlocked(false);
+      setProgress(0);
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    };
+
+    window.history.scrollRestoration = 'manual';
+    resetToStart();
+    const postHydrationReset = window.setTimeout(resetToStart, 150);
+    window.addEventListener('pageshow', resetToStart);
+    return () => {
+      window.clearTimeout(postHydrationReset);
+      window.removeEventListener('pageshow', resetToStart);
+    };
+  }, []);
 
   // Robust video loading + unlock seeking
   useEffect(() => {
@@ -28,6 +55,85 @@ export default function Hero() {
       v.removeEventListener('loadedmetadata', ready);
       v.removeEventListener('loadeddata', ready);
       v.removeEventListener('canplay', ready);
+    };
+  }, []);
+
+  // Keep the final Hero frame as a real gate. Reverse scrolling always remains available.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const getGateY = () => el.offsetTop + el.offsetHeight - window.innerHeight;
+    const syncGateState = () => {
+      document.documentElement.dataset.heroGateY = String(getGateY());
+      document.documentElement.dataset.heroGateLocked = String(!unlockedRef.current);
+    };
+    const isAtGate = () => window.scrollY >= getGateY() - 2;
+    const blockForward = (event) => {
+      if (!unlockedRef.current && isAtGate()) event.preventDefault();
+    };
+    const onWheel = (event) => {
+      if (event.deltaY > 0) blockForward(event);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === ' ' && event.target.closest?.('button')) return;
+      if (['ArrowDown', 'PageDown', 'End', ' '].includes(event.key)) blockForward(event);
+    };
+    const onTouchStart = (event) => {
+      touchStartYRef.current = event.touches[0]?.clientY ?? null;
+    };
+    const onTouchMove = (event) => {
+      const currentY = event.touches[0]?.clientY;
+      if (touchStartYRef.current !== null && currentY < touchStartYRef.current) blockForward(event);
+    };
+    const onAnchorClick = (event) => {
+      const anchor = event.target.closest?.('a[href^="#"]');
+      const target = anchor?.dataset.heroNavigate;
+      if (!unlockedRef.current && target) {
+        event.preventDefault();
+        unlockedRef.current = true;
+        passedHeroRef.current = false;
+        setUnlocked(true);
+        document.documentElement.dataset.heroGateLocked = 'false';
+        window.dispatchEvent(new CustomEvent('hero:navigate', { detail: { target } }));
+        return;
+      }
+      if (!unlockedRef.current && anchor?.getAttribute('href') !== '#top') event.preventDefault();
+    };
+    const onScrollGate = () => {
+      const gateY = getGateY();
+      if (!unlockedRef.current && window.scrollY > gateY) {
+        window.dispatchEvent(new Event('hero:snap-to-gate'));
+      }
+      if (unlockedRef.current && window.scrollY > gateY + 24) {
+        passedHeroRef.current = true;
+      }
+      if (unlockedRef.current && passedHeroRef.current && window.scrollY < gateY - 24) {
+        unlockedRef.current = false;
+        passedHeroRef.current = false;
+        setUnlocked(false);
+        syncGateState();
+      }
+    };
+
+    syncGateState();
+    window.addEventListener('wheel', onWheel, { passive: false, capture: true });
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    window.addEventListener('touchstart', onTouchStart, { passive: true, capture: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
+    el.addEventListener('click', onAnchorClick, { capture: true });
+    window.addEventListener('scroll', onScrollGate, { passive: true });
+    window.addEventListener('resize', syncGateState);
+    return () => {
+      window.removeEventListener('wheel', onWheel, { capture: true });
+      window.removeEventListener('keydown', onKeyDown, { capture: true });
+      window.removeEventListener('touchstart', onTouchStart, { capture: true });
+      window.removeEventListener('touchmove', onTouchMove, { capture: true });
+      el.removeEventListener('click', onAnchorClick, { capture: true });
+      window.removeEventListener('scroll', onScrollGate);
+      window.removeEventListener('resize', syncGateState);
+      delete document.documentElement.dataset.heroGateY;
+      delete document.documentElement.dataset.heroGateLocked;
     };
   }, []);
 
@@ -76,9 +182,19 @@ export default function Hero() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  const navigatePastHero = useCallback((target) => {
+    unlockedRef.current = true;
+    passedHeroRef.current = false;
+    setUnlocked(true);
+    document.documentElement.dataset.heroGateLocked = 'false';
+    window.dispatchEvent(new CustomEvent('hero:navigate', { detail: { target } }));
+  }, []);
+
+  const continueToSite = useCallback(() => navigatePastHero('#about'), [navigatePastHero]);
+
   const intro = progress < 0.1;
-  const nav = progress >= 0.1 && progress < 0.78;
-  const ready = progress >= 0.78;
+  const nav = progress >= 0.1 && progress < 0.985;
+  const ready = progress >= 0.985;
 
   return (
     <section id="top" ref={containerRef} className="relative w-full" style={{ height: '350vh' }}>
@@ -106,31 +222,33 @@ export default function Hero() {
         </div>
 
         {/* Right content layer */}
-        <div className="relative z-10 h-full w-full flex flex-col justify-between px-6 md:px-12 lg:px-20 pt-28 pb-10">
+        <div className="relative z-10 flex h-full w-full flex-col justify-between px-4 pb-5 pt-20 sm:px-6 sm:pb-8 sm:pt-24 md:px-12 md:pb-10 md:pt-28 lg:px-20 min-[2200px]:px-28">
           <div />
-          <div className="md:ml-auto md:w-[48%] lg:w-[44%] min-h-[320px]">
+          <div className="min-h-[280px] sm:min-h-[320px] md:ml-auto md:w-[48%] lg:w-[44%] min-[2200px]:max-w-[960px]">
             <AnimatePresence mode="wait">
               {intro && (
                 <motion.div key="intro" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }}>
-                  <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-6">/ INITIATING</div>
-                  <h1 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[0.95] font-medium text-white">{t.hero.name}</h1>
-                  <div className="mt-5 text-xl md:text-2xl text-white/80">{t.hero.role}</div>
-                  <p className="mt-6 text-base md:text-lg text-white/55 max-w-md">{t.hero.tagline}</p>
-                  <div className="mt-10 flex flex-wrap gap-3">
-                    <a href="#cases" className="group inline-flex items-center gap-2 bg-[#c5ff00] text-black px-5 py-3 rounded-full text-sm font-medium hover:bg-white transition">
-                      {t.hero.cta1} <span className="group-hover:translate-x-1 transition">→</span>
-                    </a>
-                    <a href="/assets/resume.pdf" download className="inline-flex items-center gap-2 border border-white/20 text-white px-5 py-3 rounded-full text-sm font-medium hover:bg-white/10 transition">
-                      {t.hero.cta2}
-                    </a>
+                  <div className="mb-4 font-mono text-[10px] tracking-[0.3em] text-[#c5ff00] sm:mb-6 sm:text-xs">/ INITIATING</div>
+                  <h1 className="font-display text-4xl font-medium leading-[0.95] text-white sm:text-5xl md:text-6xl lg:text-7xl min-[2200px]:text-8xl">{t.hero.name}</h1>
+                  <div className="mt-4 text-lg text-white/80 sm:mt-5 sm:text-xl md:text-2xl">{t.hero.role}</div>
+                  <p className="mt-4 max-w-md text-sm text-white/55 sm:mt-6 sm:text-base md:text-lg">{t.hero.tagline}</p>
+                  <div className="mt-6 max-w-md sm:mt-10">
+                    <div className="flex flex-wrap gap-3">
+                      <a href="#cases" data-hero-navigate="#cases" className="group inline-flex items-center gap-2 rounded-full bg-[#c5ff00] px-4 py-2.5 text-sm font-medium text-black transition hover:bg-white sm:px-5 sm:py-3">
+                        {t.hero.cta1} <span className="group-hover:translate-x-1 transition">→</span>
+                      </a>
+                      <a href="/assets/resume.pdf" download="AI Automation - Kasycheva Maria.pdf" className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 sm:px-5 sm:py-3">
+                        {t.hero.cta2}
+                      </a>
+                    </div>
+                    <ScrollPill label={t.hero.hint} />
                   </div>
-                  <ScrollPill />
                 </motion.div>
               )}
               {nav && (
                 <motion.div key="nav" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
                   <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-8">/ SECTIONS</div>
-                  <ul className="space-y-3 text-2xl md:text-3xl lg:text-4xl font-medium">
+                  <ul className="space-y-2 text-xl font-medium sm:space-y-3 sm:text-2xl md:text-3xl lg:text-4xl">
                     {t.nav.items.map((it, i) => (
                       <motion.li key={it}
                         initial={{ opacity: 0, x: 20 }}
@@ -144,12 +262,42 @@ export default function Hero() {
                 </motion.div>
               )}
               {ready && (
-                <motion.div key="ready" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}>
-                  <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-6 flex items-center gap-2">
-                    <span className="inline-block w-2 h-2 rounded-full bg-[#c5ff00] animate-pulse" /> ONLINE
+                <motion.div key="ready" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="md:-ml-8 md:w-[calc(100%+2rem)] lg:-ml-12 lg:w-[calc(100%+3rem)]">
+                  <div className="mb-3 flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-[#c5ff00] sm:mb-6 sm:text-xs">
+                    <span className="inline-block w-2 h-2 rounded-full bg-[#c5ff00] animate-pulse" /> {t.hero.online}
                   </div>
-                  <h2 className="font-display text-6xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight text-white">{t.hero.ready}</h2>
-                  <p className="mt-6 text-white/55 max-w-md">{t.hero.tagline}</p>
+                  <div className="mb-3 border border-white/10 bg-white/[0.025] px-4 py-3 font-mono text-sm tracking-[0.14em] text-[#c5ff00] sm:mb-4 sm:px-5 sm:py-4 sm:text-base sm:tracking-[0.18em]">
+                    <span className="mr-3 inline-block h-2.5 w-2.5 rounded-full bg-[#c5ff00] shadow-[0_0_12px_#c5ff00]" />
+                    &gt; {t.hero.ready}
+                  </div>
+                  <div className="border border-white/10 bg-black/35 shadow-2xl shadow-black/40 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2 font-mono text-[10px] text-white/45 sm:px-4 sm:py-3 sm:text-[11px]">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#ed6a5e]" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#f4bf4f]" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#c5ff00]" />
+                      <span className="ml-3">maria_kasycheva.sh</span>
+                    </div>
+                    <div className="space-y-2 px-3 py-3 font-mono text-[9px] leading-[1.45] tracking-[0.01em] text-white/65 min-[360px]:text-[10px] sm:space-y-4 sm:px-4 sm:py-5 sm:text-[11px] sm:leading-relaxed md:text-[13px] md:leading-[1.65]">
+                      {t.hero.profile.map((line, index) => (
+                        <div key={line} className="grid grid-cols-[1.5rem_1fr] gap-2">
+                          <span className="text-white/20">{String(index + 1).padStart(2, '0')}</span>
+                          <p>{highlightProfile(line)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {!unlocked && (
+                    <motion.button
+                      type="button"
+                      onClick={continueToSite}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className="mx-auto mt-3 flex items-center gap-3 rounded-full border border-white/25 px-6 py-2.5 font-mono text-[10px] tracking-[0.22em] text-white transition hover:border-[#c5ff00] hover:text-[#c5ff00] sm:mt-6 sm:px-7 sm:py-3 sm:text-xs"
+                    >
+                      {t.hero.continue} <span aria-hidden>↓</span>
+                    </motion.button>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -169,15 +317,33 @@ export default function Hero() {
   );
 }
 
-// Elongated transparent oval pill, slight float animation (like a jacket zipper pull)
-function ScrollPill() {
+// Centered activation hint with a small moving green slider.
+function ScrollPill({ label }) {
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-      className="mt-10">
+      className="mt-5 flex justify-center">
       <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
-        className="inline-flex items-center px-5 py-2 rounded-full border border-white/25 bg-transparent">
-        <span className="font-sans text-[13px] tracking-wide text-white/85">Scroll to Activate</span>
+        className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/45 px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-sm">
+        <span className="relative h-4 w-1 overflow-hidden rounded-full bg-white/10" aria-hidden>
+          <motion.span
+            animate={{ y: [0, 8, 0] }}
+            transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+            className="absolute left-0 top-0 h-2 w-1 rounded-full bg-[#c5ff00] shadow-[0_0_8px_#c5ff00]"
+          />
+        </span>
+        <span className="h-3 w-px bg-white/15" aria-hidden />
+        <span className="font-mono text-[10px] tracking-[0.24em] text-white/65">{label}</span>
       </motion.div>
     </motion.div>
+  );
+}
+
+function highlightProfile(text) {
+  const splitTerms = /(14 years|AI-powered automation|n8n|Make\.com|AI agents|integrations|14 років|AI-автоматизац(?:ію|ії)|AI-агентів|інтеграції)/gi;
+  const exactTerm = /^(14 years|AI-powered automation|n8n|Make\.com|AI agents|integrations|14 років|AI-автоматизац(?:ію|ії)|AI-агентів|інтеграції)$/i;
+  return text.split(splitTerms).map((part, index) =>
+    exactTerm.test(part)
+      ? <span key={`${part}-${index}`} className="text-[#c5ff00]">{part}</span>
+      : part
   );
 }

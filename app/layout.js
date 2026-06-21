@@ -1,4 +1,5 @@
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'], variable: '--font-inter', display: 'swap' });
@@ -13,7 +14,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} ${mono.variable}`}>
-      <body className="antialiased bg-[#0a0a0a] text-[#f5f5f0]">{children}</body>
+      <body className="antialiased bg-[#0a0a0a] text-[#f5f5f0]">
+        <Script id="reset-hero-scroll" strategy="beforeInteractive">
+          {`history.scrollRestoration = 'manual'; window.scrollTo(0, 0);`}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }

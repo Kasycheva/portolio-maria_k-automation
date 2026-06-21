@@ -12,8 +12,8 @@ export default function TopBar() {
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
-      // Hero outer is 350vh; section-nav appears once we're well past hero
-      setPastHero(y > window.innerHeight * 3.1);
+      const firstSection = document.getElementById('about');
+      setPastHero(Boolean(firstSection && y >= firstSection.offsetTop - 2));
       const yp = y + 140;
       let cur = ids[0];
       for (const id of ids) {

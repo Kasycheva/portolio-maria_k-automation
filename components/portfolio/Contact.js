@@ -37,7 +37,7 @@ export default function Contact() {
               { l: t.contact.telegram, v: '@maria_automates', h: 'https://t.me' },
               { l: t.contact.resume, v: 'resume.pdf ↓', h: '/assets/resume.pdf' },
             ].map((c) => (
-              <a key={c.l} href={c.h} target="_blank" rel="noreferrer"
+              <a key={c.l} href={c.h} target={c.h.endsWith('.pdf') ? undefined : '_blank'} rel={c.h.endsWith('.pdf') ? undefined : 'noreferrer'} download={c.h.endsWith('.pdf') ? 'AI Automation - Kasycheva Maria.pdf' : undefined}
                 className="group flex items-center justify-between border-b border-white/10 py-5 hover:border-[#c5ff00] transition">
                 <div>
                   <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/40">{c.l}</div>
