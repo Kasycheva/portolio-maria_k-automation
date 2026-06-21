@@ -92,17 +92,26 @@ export default function Hero() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // ----- Gate: at progress=1, lock body scroll until Continue clicked -----
+  // ----- Force scroll to top on mount + disable browser scroll restoration -----
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+    window.scrollTo(0, 0);
+  }, []);
+
+  // ----- Gate: lock body scroll until Continue clicked. Fires ONLY when sticky reaches its end. -----
   const [nearEnd, setNearEnd] = useState(false);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const check = () => {
-      const rect = el.getBoundingClientRect();
-      // Trigger gate ONLY when section bottom is right at viewport bottom (end of Hero)
-      // NOT when section is way past (rect.bottom negative = scrolled far below)
-      const inGateZone = rect.bottom <= window.innerHeight + 80 && rect.bottom > window.innerHeight * 0.4;
-      setNearEnd(inGateZone);
+      // sticky range = [0, offsetHeight - viewport]. Gate fires near upper bound (~last 8% of range)
+      const sentinelEnd = el.offsetTop + el.offsetHeight - window.innerHeight;
+      const stickyRange = el.offsetHeight - window.innerHeight;
+      const gateStart = sentinelEnd - stickyRange * 0.08;  // last 8% of sticky range
+      const gateEnd = sentinelEnd + 30;                     // small buffer past the end
+      const y = window.scrollY;
+      setNearEnd(y >= gateStart && y <= gateEnd);
     };
     check();
     window.addEventListener('scroll', check, { passive: true });
@@ -117,6 +126,12 @@ export default function Hero() {
     if (!atEnd) return;
     if (typeof window !== 'undefined' && window.__lenis) window.__lenis.stop();
     document.body.style.overflow = 'hidden';
+    // Pin scroll exactly at end of sticky range so video frame is the last one (with glasses)
+    const el = containerRef.current;
+    if (el) {
+      const sentinelEnd = el.offsetTop + el.offsetHeight - window.innerHeight;
+      if (Math.abs(window.scrollY - sentinelEnd) > 4) window.scrollTo(0, sentinelEnd);
+    }
     return () => {
       if (typeof window !== 'undefined' && window.__lenis) window.__lenis.start();
       document.body.style.overflow = '';
