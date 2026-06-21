@@ -15,10 +15,10 @@ function App() {
   const [heroDone, setHeroDone] = useState(false);
   return (
     <LangProvider>
-      <SmoothScroll />
-      <Hero onContinue={() => setHeroDone(true)} />
+      <SmoothScroll enabled={heroDone} />
+      <TopBar showSectionNav={heroDone} />
       <main className="relative grain">
-        <TopBar visible={heroDone} />
+        <Hero onContinue={() => setHeroDone(true)} />
         <About />
         <Skills />
         <CaseStudies />
