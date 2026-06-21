@@ -3,26 +3,29 @@ import { useEffect, useState } from 'react';
 import { useLang } from './LangContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function TopBar({ showSectionNav }) {
+export default function TopBar() {
   const { lang, setLang, t } = useLang();
   const [active, setActive] = useState('about');
+  const [pastHero, setPastHero] = useState(false);
   const ids = ['about', 'skills', 'cases', 'workflow', 'ai', 'contact'];
 
   useEffect(() => {
-    if (!showSectionNav) return;
     const onScroll = () => {
-      const y = window.scrollY + 140;
+      const y = window.scrollY;
+      // Hero outer is 350vh; section-nav appears once we're well past hero
+      setPastHero(y > window.innerHeight * 3.1);
+      const yp = y + 140;
       let cur = ids[0];
       for (const id of ids) {
         const el = document.getElementById(id);
-        if (el && el.offsetTop <= y) cur = id;
+        if (el && el.offsetTop <= yp) cur = id;
       }
       setActive(cur);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
-  }, [showSectionNav]);
+  }, []);
 
   return (
     <motion.header
@@ -31,7 +34,7 @@ export default function TopBar({ showSectionNav }) {
       <a href="#top" className="font-display text-sm tracking-[0.2em] uppercase">M.K — <span className="opacity-60">AI Automation</span></a>
 
       <AnimatePresence>
-        {showSectionNav && (
+        {pastHero && (
           <motion.nav
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.4 }}
             className="hidden md:flex items-center gap-5 lg:gap-7 font-mono text-[11px] tracking-[0.18em] uppercase">
