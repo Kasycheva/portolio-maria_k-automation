@@ -203,7 +203,7 @@ export default function Hero() {
 
         {/* ONE video element — its last frame already shows sunglasses, no image crossfade jumps */}
         <div className="absolute inset-0 flex">
-          <div className="relative h-full w-full md:w-[58%]">
+          <div className="hero-media relative h-full w-full md:w-[58%]">
             <video
               ref={videoRef}
               src="/assets/maria-video-opt.mp4"
