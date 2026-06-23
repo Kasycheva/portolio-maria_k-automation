@@ -14,9 +14,27 @@ export default function Hero() {
   const unlockedRef = useRef(false);
   const passedHeroRef = useRef(false);
   const touchStartYRef = useRef(null);
+  const stableVHRef = useRef(0);
+  const stableWRef = useRef(0);
   const [progress, setProgress] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
+
+  // Stable viewport height: ignore the mobile URL bar showing/hiding (it
+  // changes window.innerHeight mid-scroll, which made the hero gate move and
+  // the page jump near CONTINUE). Use the larger of innerHeight/clientHeight
+  // and only re-measure on a real width change (orientation), never on the
+  // height-only changes the URL bar produces.
+  useLayoutEffect(() => {
+    const measure = () => {
+      stableVHRef.current = Math.max(window.innerHeight, document.documentElement.clientHeight || 0);
+      stableWRef.current = window.innerWidth;
+    };
+    measure();
+    const onResize = () => { if (window.innerWidth !== stableWRef.current) measure(); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // Always begin the Hero from frame zero, including reloads and bfcache restores.
   useLayoutEffect(() => {
@@ -64,7 +82,7 @@ export default function Hero() {
     const el = containerRef.current;
     if (!el) return;
 
-    const getGateY = () => el.offsetTop + el.offsetHeight - window.innerHeight;
+    const getGateY = () => el.offsetTop + el.offsetHeight - (stableVHRef.current || window.innerHeight);
     const syncGateState = () => {
       document.documentElement.dataset.heroGateY = String(getGateY());
       document.documentElement.dataset.heroGateLocked = String(!unlockedRef.current);
@@ -144,7 +162,7 @@ export default function Hero() {
     if (!el) return;
     const onScroll = () => {
       const rect = el.getBoundingClientRect();
-      const total = el.offsetHeight - window.innerHeight;
+      const total = el.offsetHeight - (stableVHRef.current || window.innerHeight);
       const scrolled = Math.min(Math.max(-rect.top, 0), total);
       const p = total > 0 ? scrolled / total : 0;
       setProgress(p);
