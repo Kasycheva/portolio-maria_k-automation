@@ -10,6 +10,7 @@ export default function Hero() {
   const targetTimeRef = useRef(0);
   const currentTimeRef = useRef(0);
   const lastAppliedRef = useRef(-1);
+  const lastSeekTsRef = useRef(0);
   const unlockedRef = useRef(false);
   const passedHeroRef = useRef(false);
   const touchStartYRef = useRef(null);
@@ -173,7 +174,18 @@ export default function Hero() {
         currentTimeRef.current += (targetTimeRef.current - currentTimeRef.current) * 0.18;
         // Only push to video if delta worth a paint
         if (Math.abs(currentTimeRef.current - lastAppliedRef.current) > 0.012) {
-          try { v.currentTime = currentTimeRef.current; lastAppliedRef.current = currentTimeRef.current; } catch (e) {}
+          // Don't stack a new seek while the decoder is still resolving the
+          // previous one — on weak browsers (smart TVs) seek pile-up blanks the
+          // video mid-scroll. A 200ms fallback still forces progress if
+          // `seeking` ever gets stuck, so capable devices are unaffected.
+          const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+          if (!v.seeking || now - lastSeekTsRef.current > 200) {
+            try {
+              v.currentTime = currentTimeRef.current;
+              lastAppliedRef.current = currentTimeRef.current;
+              lastSeekTsRef.current = now;
+            } catch (e) {}
+          }
         }
       }
       raf = requestAnimationFrame(loop);
@@ -206,14 +218,14 @@ export default function Hero() {
           <div className="hero-media relative h-full w-full md:w-[58%]">
             <video
               ref={videoRef}
-              src="/assets/maria-video-opt.mp4"
+              src="/assets/maria-video-opt-hq.mp4"
               muted playsInline preload="auto"
-              poster="/assets/maria-no-sunglasses.jpg"
+              poster="/assets/maria-no-sunglasses-hq.jpg"
               className="hero-vid absolute inset-0 w-full h-full object-cover object-left"
               style={{ opacity: videoReady ? 1 : 0, transition: 'opacity .4s' }}
             />
             {/* Subtle fallback while metadata loads */}
-            <img src="/assets/maria-no-sunglasses.jpg" alt=""
+            <img src="/assets/maria-no-sunglasses-hq.jpg" alt=""
               aria-hidden
               className="hero-vid absolute inset-0 w-full h-full object-cover object-left pointer-events-none"
               style={{ opacity: videoReady ? 0 : 1, transition: 'opacity .4s' }} />
