@@ -44,15 +44,21 @@ body { font-family: var(--font-inter), system-ui, sans-serif; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { scrollbar-width: none; }
 
-/* Hero mobile: reframe face into view on narrow viewports.
-   Face is at ~18% from left in the 1280×720 source frame.
-   object-position: 20% places it at 20% from the container's left edge
-   consistently across all phone widths. No effect above 767px. */
-@media (max-width: 767px) {
-  .hero-vid { object-position: 20% center; }
-  /* Push dark gradient stop to the far right edge so it only blends
-     the last ~15% of the frame instead of covering the center. */
-  .hero-grad {
-    background: linear-gradient(to right, rgba(0,0,0,0.15) 0%, transparent 20%, transparent 85%, #0a0a0a 100%);
-  }
+/* Hero responsive fixes — phones and tablets (<1024px).
+   Desktop (1024px+) is completely untouched.
+
+   .hero-vid  — face framing: 20% keeps the face at 20% from the container's
+                left edge regardless of container width or aspect ratio.
+   .hero-grad — gradient fix: on narrow/tall viewports the original via-transparent
+                at 50% creates a dark slab over the face; push the dark stop to 85%
+                so it only blends the last 15% of the frame. */
+@media (max-width: 1023px) {
+  .hero-vid  { object-position: 20% center; }
+  .hero-grad { background: linear-gradient(to right, rgba(0,0,0,0.15) 0%, transparent 20%, transparent 85%, #0a0a0a 100%); }
+}
+
+/* Phone-only layout fix (≤639px): switch from justify-between to justify-end
+   so the text block drops to the bottom, revealing more of the face above. */
+@media (max-width: 639px) {
+  .hero-layout { justify-content: flex-end; }
 }
