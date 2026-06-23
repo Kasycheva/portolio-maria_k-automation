@@ -203,21 +203,21 @@ export default function Hero() {
 
         {/* ONE video element — its last frame already shows sunglasses, no image crossfade jumps */}
         <div className="absolute inset-0 flex">
-          <div className="relative h-full w-full md:w-[58%]">
+          <div className="hero-media-frame relative h-full">
             <video
               ref={videoRef}
               src="/assets/maria-video-opt.mp4"
               muted playsInline preload="auto"
               poster="/assets/maria-no-sunglasses.jpg"
-              className="absolute inset-0 w-full h-full object-cover object-left"
+              className="hero-media-asset absolute inset-0 w-full h-full object-cover"
               style={{ opacity: videoReady ? 1 : 0, transition: 'opacity .4s' }}
             />
             {/* Subtle fallback while metadata loads */}
             <img src="/assets/maria-no-sunglasses.jpg" alt=""
               aria-hidden
-              className="absolute inset-0 w-full h-full object-cover object-left pointer-events-none"
+              className="hero-media-asset absolute inset-0 w-full h-full object-cover pointer-events-none"
               style={{ opacity: videoReady ? 0 : 1, transition: 'opacity .4s' }} />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-[#0a0a0a]" />
+            <div className="hero-media-vignette absolute inset-0" />
           </div>
         </div>
 

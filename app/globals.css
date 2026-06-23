@@ -40,6 +40,69 @@ body { font-family: var(--font-inter), system-ui, sans-serif; }
   background-size: 80px 80px;
 }
 
+/* Hero responsive portrait framing. Keep the Hero behavior intact; only tune the visible crop/soft fade. */
+.hero-media-frame {
+  width: 100%;
+}
+
+.hero-media-asset {
+  object-position: 9% center;
+}
+
+.hero-media-vignette {
+  background:
+    linear-gradient(90deg, rgba(10,10,10,0.02) 0%, rgba(10,10,10,0.08) 45%, rgba(10,10,10,0.36) 74%, rgba(10,10,10,0.72) 100%),
+    linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.04) 45%, rgba(10,10,10,0.42) 100%);
+}
+
+@media (min-width: 360px) {
+  .hero-media-asset {
+    object-position: 10.5% center;
+  }
+}
+
+@media (min-width: 420px) {
+  .hero-media-asset {
+    object-position: 12% center;
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-media-frame {
+    width: 74%;
+  }
+
+  .hero-media-asset {
+    object-position: 11% center;
+  }
+
+  .hero-media-vignette {
+    background:
+      linear-gradient(90deg, rgba(10,10,10,0.04) 0%, rgba(10,10,10,0.08) 42%, rgba(10,10,10,0.38) 72%, rgba(10,10,10,0.86) 100%),
+      linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.03) 50%, rgba(10,10,10,0.28) 100%);
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-media-frame {
+    width: 68%;
+  }
+
+  .hero-media-asset {
+    object-position: 8% center;
+  }
+}
+
+@media (min-width: 1440px) {
+  .hero-media-frame {
+    width: 64%;
+  }
+
+  .hero-media-asset {
+    object-position: left center;
+  }
+}
+
 /* Hide scrollbar on terminal */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { scrollbar-width: none; }
