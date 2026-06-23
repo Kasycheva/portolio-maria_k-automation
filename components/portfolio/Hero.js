@@ -217,7 +217,7 @@ export default function Hero() {
               aria-hidden
               className="hero-vid absolute inset-0 w-full h-full object-cover object-left pointer-events-none"
               style={{ opacity: videoReady ? 0 : 1, transition: 'opacity .4s' }} />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-[#0a0a0a]" />
+            <div className="hero-grad absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-[#0a0a0a]" />
           </div>
         </div>
 
