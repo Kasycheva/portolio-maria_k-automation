@@ -206,7 +206,7 @@ export default function Hero() {
           <div className="relative h-full w-full md:w-[58%]">
             <video
               ref={videoRef}
-              src="/assets/maria-video-opt.mp4"
+              src="/assets/maria-video-enhanced.mp4"
               muted playsInline preload="auto"
               poster="/assets/maria-no-sunglasses.jpg"
               className="absolute inset-0 w-full h-full object-cover object-left"
