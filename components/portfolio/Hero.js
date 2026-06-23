@@ -224,7 +224,7 @@ export default function Hero() {
         {/* Right content layer */}
         <div className="hero-layout relative z-10 flex h-full w-full flex-col justify-between px-4 pb-5 pt-20 sm:px-6 sm:pb-8 sm:pt-24 md:px-12 md:pb-10 md:pt-28 lg:px-20 min-[2200px]:px-28">
           <div />
-          <div className="min-h-[280px] sm:min-h-[320px] md:ml-auto md:w-[48%] lg:w-[44%] min-[2200px]:max-w-[960px]">
+          <div className="hero-content min-h-[280px] sm:min-h-[320px] md:ml-auto md:w-[48%] lg:w-[44%] min-[2200px]:max-w-[960px]">
             <AnimatePresence mode="wait">
               {intro && (
                 <motion.div key="intro" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }}>

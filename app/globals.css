@@ -54,11 +54,15 @@ body { font-family: var(--font-inter), system-ui, sans-serif; }
                 so it only blends the last 15% of the frame. */
 @media (max-width: 1023px) {
   .hero-vid  { object-position: 20% center; }
-  .hero-grad { background: linear-gradient(to right, rgba(0,0,0,0.15) 0%, transparent 20%, transparent 85%, #0a0a0a 100%); }
+  /* Smooth wide fade: starts transparent at 20% (face position) and
+     eases to #0a0a0a at 100% over 80% of the container width.
+     No abrupt stripe — the light studio background dissolves gradually. */
+  .hero-grad { background: linear-gradient(to right, rgba(0,0,0,0.15), transparent 20%, #0a0a0a 100%); }
 }
 
-/* Phone-only layout fix (≤639px): switch from justify-between to justify-end
-   so the text block drops to the bottom, revealing more of the face above. */
+/* Phone-only layout (≤639px): content drops to bottom, face fills the top.
+   margin-bottom lifts the block ~8vh above the progress bar. */
 @media (max-width: 639px) {
-  .hero-layout { justify-content: flex-end; }
+  .hero-layout  { justify-content: flex-end; }
+  .hero-content { margin-bottom: 8vh; }
 }
