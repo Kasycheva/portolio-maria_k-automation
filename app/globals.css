@@ -52,16 +52,20 @@ body { font-family: var(--font-inter), system-ui, sans-serif; }
    .hero-grad — gradient fix: on narrow/tall viewports the original via-transparent
                 at 50% creates a dark slab over the face; push the dark stop to 85%
                 so it only blends the last 15% of the frame. */
-@media (max-width: 1023px) {
-  .hero-vid  { object-position: 20% center; }
-  /* Smooth wide fade: starts transparent at 20% (face position) and
-     eases to #0a0a0a at 100% over 80% of the container width.
-     No abrupt stripe — the light studio background dissolves gradually. */
-  .hero-grad { background: linear-gradient(to right, rgba(0,0,0,0.15), transparent 20%, #0a0a0a 100%); }
+/* Gradient — applied globally (all sizes, including desktop).
+   Original via-transparent sits at 50%, creating a dark band over the
+   face on tall viewports. Wide transparent zone (30–70%) keeps the face
+   clear; darkening only starts at 70% and reaches #0a0a0a at the edge. */
+.hero-grad {
+  background: linear-gradient(to right, rgba(0,0,0,0.15), transparent 30%, transparent 70%, #0a0a0a 100%);
 }
 
-/* Phone-only layout (≤639px): content drops to bottom, face fills the top.
-   margin-bottom lifts the block ~8vh above the progress bar. */
+/* Face framing — only needed below 1024px where aspect ratio crops harder */
+@media (max-width: 1023px) {
+  .hero-vid { object-position: 20% center; }
+}
+
+/* Phone layout (≤639px): text drops to bottom, face fills upper frame */
 @media (max-width: 639px) {
   .hero-layout  { justify-content: flex-end; }
   .hero-content { margin-bottom: 8vh; }
