@@ -11,6 +11,7 @@ export default function Hero() {
   const currentTimeRef = useRef(0);
   const lastAppliedRef = useRef(-1);
   const lastSeekTsRef = useRef(0);
+  const snapGuardRef = useRef(0);
   const unlockedRef = useRef(false);
   const passedHeroRef = useRef(false);
   const touchStartYRef = useRef(null);
@@ -103,8 +104,16 @@ export default function Hero() {
     };
     const onScrollGate = () => {
       const gateY = getGateY();
-      if (!unlockedRef.current && window.scrollY > gateY) {
-        window.dispatchEvent(new Event('hero:snap-to-gate'));
+      // Snap back to the gate while locked — but THROTTLE it. On phones/tablets
+      // native touch momentum keeps firing scroll events past the gate; snapping
+      // on every one (~60/s) fought the momentum and made the page jitter where
+      // CONTINUE appears. Snap once, then stay quiet ~300ms so the inertia dies.
+      if (!unlockedRef.current && window.scrollY > gateY + 2) {
+        const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        if (now - snapGuardRef.current > 300) {
+          snapGuardRef.current = now;
+          window.dispatchEvent(new Event('hero:snap-to-gate'));
+        }
       }
       if (unlockedRef.current && window.scrollY > gateY + 24) {
         passedHeroRef.current = true;
