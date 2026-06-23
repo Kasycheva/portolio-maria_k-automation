@@ -40,19 +40,13 @@ body { font-family: var(--font-inter), system-ui, sans-serif; }
   background-size: 80px 80px;
 }
 
-/* Hero responsive portrait framing. Keep the Hero behavior intact; only tune the visible crop/soft fade. */
+/* Hero responsive portrait framing. Keep the Hero behavior intact; only tune the visible crop. */
 .hero-media-frame {
   width: 100%;
 }
 
 .hero-media-asset {
   object-position: 9% center;
-}
-
-.hero-media-vignette {
-  background:
-    linear-gradient(90deg, rgba(10,10,10,0.02) 0%, rgba(10,10,10,0.08) 45%, rgba(10,10,10,0.36) 74%, rgba(10,10,10,0.72) 100%),
-    linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.04) 45%, rgba(10,10,10,0.42) 100%);
 }
 
 @media (min-width: 360px) {
@@ -69,33 +63,27 @@ body { font-family: var(--font-inter), system-ui, sans-serif; }
 
 @media (min-width: 768px) {
   .hero-media-frame {
-    width: 74%;
+    width: 58%;
   }
 
   .hero-media-asset {
-    object-position: 11% center;
-  }
-
-  .hero-media-vignette {
-    background:
-      linear-gradient(90deg, rgba(10,10,10,0.04) 0%, rgba(10,10,10,0.08) 42%, rgba(10,10,10,0.38) 72%, rgba(10,10,10,0.86) 100%),
-      linear-gradient(180deg, rgba(10,10,10,0) 0%, rgba(10,10,10,0.03) 50%, rgba(10,10,10,0.28) 100%);
+    object-position: left center;
   }
 }
 
 @media (min-width: 1024px) {
   .hero-media-frame {
-    width: 68%;
+    width: 58%;
   }
 
   .hero-media-asset {
-    object-position: 8% center;
+    object-position: left center;
   }
 }
 
 @media (min-width: 1440px) {
   .hero-media-frame {
-    width: 64%;
+    width: 58%;
   }
 
   .hero-media-asset {
