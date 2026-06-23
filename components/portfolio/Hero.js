@@ -274,7 +274,7 @@ export default function Hero() {
                 </motion.div>
               )}
               {ready && (
-                <motion.div key="ready" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="md:-ml-8 md:w-[calc(100%+2rem)] lg:-ml-12 lg:w-[calc(100%+3rem)]">
+                <motion.div key="ready" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.6 }} className="md:-ml-8 md:w-[calc(100%+2rem)] lg:-ml-12 lg:w-[calc(100%+3rem)]">
                   <div className="mb-3 flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-[#c5ff00] sm:mb-6 sm:text-xs">
                     <span className="inline-block w-2 h-2 rounded-full bg-[#c5ff00] animate-pulse" /> {t.hero.online}
                   </div>

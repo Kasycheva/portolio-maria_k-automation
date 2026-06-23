@@ -19,7 +19,10 @@ export default function SmoothScroll() {
       // (the virtualScroll hook below already handles both). Desktop wheel is
       // unaffected — syncTouch only changes touch devices.
       syncTouch: true,
-      syncTouchLerp: 0.08,
+      // Higher = touch tracks the finger more tightly. 0.08 felt floaty and
+      // made the scrubbing video lag behind ("заторможенное"); 0.12 keeps the
+      // jitter fix while feeling more connected/natural.
+      syncTouchLerp: 0.12,
       virtualScroll: ({ deltaY, event }) => {
         const root = document.documentElement;
         const gateY = Number(root.dataset.heroGateY);
