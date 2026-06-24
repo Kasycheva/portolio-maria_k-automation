@@ -1,34 +1,59 @@
 'use client';
+import { useEffect, useRef, useState } from 'react';
 import { useLang } from './LangContext';
-import { skillTags, learning } from '@/lib/i18n';
-import { motion } from 'framer-motion';
+import { skillsRowA, skillsRowB } from '@/lib/i18n';
+
+function Ribbon({ items, reverse = false, play }) {
+  const row = [...items, ...items];
+  return (
+    <div className="overflow-hidden py-4 border-y border-white/10 bg-white/[0.02]">
+      <div
+        className={`marquee gap-2 px-3 ${reverse ? 'marquee-reverse' : ''} ${play ? '' : 'marquee-paused'}`}
+      >
+        {row.map((s, i) => (
+          <span
+            key={i}
+            className="shrink-0 font-display text-xl md:text-2xl px-4 py-1.5 text-white/85 whitespace-nowrap inline-flex items-center"
+          >
+            {s}
+            <span className="mx-3 text-[#c5ff00]/60 text-[0.5em] translate-y-[-0.1em]" aria-hidden>●</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Skills() {
   const { t } = useLang();
-  const row = [...skillTags, ...skillTags];
+  const ref = useRef(null);
+  // Keep the marquees parked at their first item until the block scrolls into
+  // view, then start them from the beginning so the main tools (n8n, Make.com…)
+  // lead instead of whatever the infinite loop happened to land on.
+  const [play, setPlay] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !('IntersectionObserver' in window)) { setPlay(true); return; }
+    const io = new IntersectionObserver(
+      (entries) => { if (entries.some((e) => e.isIntersecting)) { setPlay(true); io.disconnect(); } },
+      { threshold: 0.2 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
-    <section id="skills" className="relative py-32 md:py-40 border-t border-white/5">
+    <section id="skills" ref={ref} className="relative py-20 md:py-28 border-t border-white/5">
       <div className="px-6 md:px-12 lg:px-20 max-w-7xl mx-auto">
-        <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-8">{t.skills.kicker}</div>
+        <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-6">{t.skills.kicker}</div>
         <h2 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight">{t.skills.heading}</h2>
       </div>
-      <div className="mt-16 overflow-hidden py-6 border-y border-white/10 bg-white/[0.02]">
-        <div className="marquee gap-3 px-3">
-          {row.map((s, i) => (
-            <span key={i} className="shrink-0 font-display text-2xl md:text-3xl px-5 py-2 mx-1 text-white/85 whitespace-nowrap">{s}<span className="text-[#c5ff00] ml-4">◆</span></span>
-          ))}
-        </div>
-      </div>
-      <div className="mt-16 px-6 md:px-12 lg:px-20 max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-          className="inline-flex flex-col md:flex-row md:items-center gap-4 md:gap-8 border border-white/10 rounded-2xl px-6 py-5 bg-white/[0.02]">
-          <div className="font-mono text-xs uppercase tracking-[0.3em] text-white/55">{t.skills.learning}</div>
-          <div className="flex flex-wrap gap-2">
-            {learning.map((l) => (
-              <span key={l} className="font-display text-xl md:text-2xl text-[#c5ff00]">{l}</span>
-            ))}
-          </div>
-        </motion.div>
+
+      {/* Two ribbons running in opposite directions */}
+      <div className="mt-10 md:mt-12 flex flex-col gap-3">
+        <Ribbon items={skillsRowA} play={play} />
+        <Ribbon items={skillsRowB} reverse play={play} />
       </div>
     </section>
   );

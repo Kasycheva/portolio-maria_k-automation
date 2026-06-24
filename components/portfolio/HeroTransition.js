@@ -44,6 +44,9 @@ export default function HeroTransition() {
       const t2 = window.setTimeout(() => {
         setMounted(false);
         setFading(false);
+        // Tell the destination section it is now visible, so its entrance
+        // animation plays on a clear screen instead of behind this overlay.
+        window.dispatchEvent(new Event('hero:reveal'));
       }, hold + FADE_MS);
       timersRef.current = [t1, t2];
     };
