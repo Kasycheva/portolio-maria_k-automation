@@ -30,7 +30,11 @@ export default function TopBar() {
   return (
     <motion.header
       initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4, duration: 0.8 }}
-      className="fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between mix-blend-difference text-white">
+      className={`fixed top-0 left-0 right-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between text-white transition-colors duration-300 ${
+        pastHero
+          ? 'bg-[#0a0a0a]/70 backdrop-blur-md border-b border-white/10'
+          : 'mix-blend-difference'
+      }`}>
       <a href="#top" className="font-display text-sm tracking-[0.2em] uppercase">M.K — <span className="opacity-60">AI Automation</span></a>
 
       <AnimatePresence>

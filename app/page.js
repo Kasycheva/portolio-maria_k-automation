@@ -1,6 +1,7 @@
 'use client';
 import { LangProvider } from '@/components/portfolio/LangContext';
 import SmoothScroll from '@/components/portfolio/SmoothScroll';
+import HeroTransition from '@/components/portfolio/HeroTransition';
 import TopBar from '@/components/portfolio/TopBar';
 import Hero from '@/components/portfolio/Hero';
 import About from '@/components/portfolio/About';
@@ -14,6 +15,7 @@ function App() {
   return (
     <LangProvider>
       <SmoothScroll />
+      <HeroTransition />
       <TopBar />
       <main className="relative grain">
         <Hero />
