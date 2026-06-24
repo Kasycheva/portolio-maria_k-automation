@@ -10,12 +10,31 @@ export default function Hero() {
   const targetTimeRef = useRef(0);
   const currentTimeRef = useRef(0);
   const lastAppliedRef = useRef(-1);
+  const lastSeekTsRef = useRef(0);
   const unlockedRef = useRef(false);
   const passedHeroRef = useRef(false);
   const touchStartYRef = useRef(null);
+  const stableVHRef = useRef(0);
+  const stableWRef = useRef(0);
   const [progress, setProgress] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
+
+  // Stable viewport height: ignore the mobile URL bar showing/hiding (it
+  // changes window.innerHeight mid-scroll, which made the hero gate move and
+  // the page jump near CONTINUE). Use the larger of innerHeight/clientHeight
+  // and only re-measure on a real width change (orientation), never on the
+  // height-only changes the URL bar produces.
+  useLayoutEffect(() => {
+    const measure = () => {
+      stableVHRef.current = Math.max(window.innerHeight, document.documentElement.clientHeight || 0);
+      stableWRef.current = window.innerWidth;
+    };
+    measure();
+    const onResize = () => { if (window.innerWidth !== stableWRef.current) measure(); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // Always begin the Hero from frame zero, including reloads and bfcache restores.
   useLayoutEffect(() => {
@@ -63,7 +82,7 @@ export default function Hero() {
     const el = containerRef.current;
     if (!el) return;
 
-    const getGateY = () => el.offsetTop + el.offsetHeight - window.innerHeight;
+    const getGateY = () => el.offsetTop + el.offsetHeight - (stableVHRef.current || window.innerHeight);
     const syncGateState = () => {
       document.documentElement.dataset.heroGateY = String(getGateY());
       document.documentElement.dataset.heroGateLocked = String(!unlockedRef.current);
@@ -143,7 +162,7 @@ export default function Hero() {
     if (!el) return;
     const onScroll = () => {
       const rect = el.getBoundingClientRect();
-      const total = el.offsetHeight - window.innerHeight;
+      const total = el.offsetHeight - (stableVHRef.current || window.innerHeight);
       const scrolled = Math.min(Math.max(-rect.top, 0), total);
       const p = total > 0 ? scrolled / total : 0;
       setProgress(p);
@@ -173,7 +192,18 @@ export default function Hero() {
         currentTimeRef.current += (targetTimeRef.current - currentTimeRef.current) * 0.18;
         // Only push to video if delta worth a paint
         if (Math.abs(currentTimeRef.current - lastAppliedRef.current) > 0.012) {
-          try { v.currentTime = currentTimeRef.current; lastAppliedRef.current = currentTimeRef.current; } catch (e) {}
+          // Don't stack a new seek while the decoder is still resolving the
+          // previous one — on weak browsers (smart TVs) seek pile-up blanks the
+          // video mid-scroll. A 200ms fallback still forces progress if
+          // `seeking` ever gets stuck, so capable devices are unaffected.
+          const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+          if (!v.seeking || now - lastSeekTsRef.current > 200) {
+            try {
+              v.currentTime = currentTimeRef.current;
+              lastAppliedRef.current = currentTimeRef.current;
+              lastSeekTsRef.current = now;
+            } catch (e) {}
+          }
         }
       }
       raf = requestAnimationFrame(loop);
@@ -203,28 +233,28 @@ export default function Hero() {
 
         {/* ONE video element — its last frame already shows sunglasses, no image crossfade jumps */}
         <div className="absolute inset-0 flex">
-          <div className="relative h-full w-full md:w-[58%]">
+          <div className="hero-media relative h-full w-full md:w-[58%]">
             <video
               ref={videoRef}
-              src="/assets/maria-video-opt.mp4"
+              src="/assets/maria-video-opt-hq.mp4"
               muted playsInline preload="auto"
-              poster="/assets/maria-no-sunglasses.jpg"
-              className="absolute inset-0 w-full h-full object-cover object-left"
+              poster="/assets/maria-no-sunglasses-hq.jpg"
+              className="hero-vid absolute inset-0 w-full h-full object-cover object-left"
               style={{ opacity: videoReady ? 1 : 0, transition: 'opacity .4s' }}
             />
             {/* Subtle fallback while metadata loads */}
-            <img src="/assets/maria-no-sunglasses.jpg" alt=""
+            <img src="/assets/maria-no-sunglasses-hq.jpg" alt=""
               aria-hidden
-              className="absolute inset-0 w-full h-full object-cover object-left pointer-events-none"
+              className="hero-vid absolute inset-0 w-full h-full object-cover object-left pointer-events-none"
               style={{ opacity: videoReady ? 0 : 1, transition: 'opacity .4s' }} />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-[#0a0a0a]" />
+            <div className="hero-grad absolute inset-0" />
           </div>
         </div>
 
         {/* Right content layer */}
-        <div className="relative z-10 flex h-full w-full flex-col justify-between px-4 pb-5 pt-20 sm:px-6 sm:pb-8 sm:pt-24 md:px-12 md:pb-10 md:pt-28 lg:px-20 min-[2200px]:px-28">
+        <div className="hero-layout relative z-10 flex h-full w-full flex-col justify-between px-4 pb-5 pt-20 sm:px-6 sm:pb-8 sm:pt-24 md:px-12 md:pb-10 md:pt-28 lg:px-20 min-[2200px]:px-28">
           <div />
-          <div className="min-h-[280px] sm:min-h-[320px] md:ml-auto md:w-[48%] lg:w-[44%] min-[2200px]:max-w-[960px]">
+          <div className="hero-content min-h-[280px] sm:min-h-[320px] md:ml-auto md:w-[48%] lg:w-[44%] min-[2200px]:max-w-[960px]">
             <AnimatePresence mode="wait">
               {intro && (
                 <motion.div key="intro" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }}>
@@ -262,7 +292,7 @@ export default function Hero() {
                 </motion.div>
               )}
               {ready && (
-                <motion.div key="ready" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="md:-ml-8 md:w-[calc(100%+2rem)] lg:-ml-12 lg:w-[calc(100%+3rem)]">
+                <motion.div key="ready" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.6 }} className="md:-ml-8 md:w-[calc(100%+2rem)] lg:-ml-12 lg:w-[calc(100%+3rem)]">
                   <div className="mb-3 flex items-center gap-2 font-mono text-[10px] tracking-[0.3em] text-[#c5ff00] sm:mb-6 sm:text-xs">
                     <span className="inline-block w-2 h-2 rounded-full bg-[#c5ff00] animate-pulse" /> {t.hero.online}
                   </div>

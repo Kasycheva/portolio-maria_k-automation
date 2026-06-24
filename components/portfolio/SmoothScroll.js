@@ -13,6 +13,16 @@ export default function SmoothScroll() {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       wheelMultiplier: 1,
+      // Let Lenis drive touch too. Without this, native momentum on phones/
+      // tablets fights the gate's snap-back and the page jitters where CONTINUE
+      // appears. With syncTouch the gate blocks touch as smoothly as the wheel
+      // (the virtualScroll hook below already handles both). Desktop wheel is
+      // unaffected — syncTouch only changes touch devices.
+      syncTouch: true,
+      // Higher = touch tracks the finger more tightly. 0.08 felt floaty and
+      // made the scrubbing video lag behind ("заторможенное"); 0.12 keeps the
+      // jitter fix while feeling more connected/natural.
+      syncTouchLerp: 0.12,
       virtualScroll: ({ deltaY, event }) => {
         const root = document.documentElement;
         const gateY = Number(root.dataset.heroGateY);
