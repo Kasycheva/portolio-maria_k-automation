@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useLang } from './LangContext';
-import { motion } from 'framer-motion';
+import Reveal from './Reveal';
 
 export default function Contact() {
   const { t } = useLang();
@@ -24,10 +24,11 @@ export default function Contact() {
     <section id="contact" className="relative py-32 md:py-44 border-t border-white/5 overflow-hidden">
       <div className="absolute inset-0 grid-bg opacity-30 pointer-events-none" />
       <div className="px-6 md:px-12 lg:px-20 max-w-7xl mx-auto relative">
-        <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-8">{t.contact.kicker}</div>
-        <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-          className="font-display text-6xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight max-w-4xl">{t.contact.heading}</motion.h2>
-        <p className="mt-6 text-white/55 max-w-xl text-lg">{t.contact.sub}</p>
+        <Reveal>
+          <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-8">{t.contact.kicker}</div>
+          <h2 className="font-display text-6xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight max-w-4xl">{t.contact.heading}</h2>
+          <p className="mt-6 text-white/55 max-w-xl text-lg">{t.contact.sub}</p>
+        </Reveal>
 
         <div className="mt-16 grid md:grid-cols-12 gap-10">
           <div className="md:col-span-5 space-y-4">
