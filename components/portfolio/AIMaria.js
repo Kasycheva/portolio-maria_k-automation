@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from './LangContext';
+import Reveal from './Reveal';
 
 const RESPONSES = {
   'who are you': 'I am Maria Kasycheva — an AI Automation Specialist. I design workflows that connect operations, data, and AI to remove manual work.',
@@ -41,11 +42,13 @@ export default function AIMaria() {
   return (
     <section id="ai" className="relative py-32 md:py-40 border-t border-white/5">
       <div className="px-6 md:px-12 lg:px-20 max-w-7xl mx-auto">
-        <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-8">{t.ai.kicker}</div>
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <h2 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight">{t.ai.heading}</h2>
-          <p className="text-white/55 max-w-md">{t.ai.sub}</p>
-        </div>
+        <Reveal>
+          <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-8">{t.ai.kicker}</div>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <h2 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight">{t.ai.heading}</h2>
+            <p className="text-white/55 max-w-md">{t.ai.sub}</p>
+          </div>
+        </Reveal>
         <div className="mt-12 rounded-2xl bg-black border border-white/10 overflow-hidden shadow-2xl">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-white/[0.02]">
             <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from './LangContext';
 import { skillsRowA, skillsRowB } from '@/lib/i18n';
+import Reveal from './Reveal';
 
 function Ribbon({ items, reverse = false, play }) {
   const row = [...items, ...items];
@@ -46,8 +47,10 @@ export default function Skills() {
   return (
     <section id="skills" ref={ref} className="relative py-20 md:py-28 border-t border-white/5">
       <div className="px-6 md:px-12 lg:px-20 max-w-7xl mx-auto">
-        <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-6">{t.skills.kicker}</div>
-        <h2 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight">{t.skills.heading}</h2>
+        <Reveal>
+          <div className="font-mono text-xs tracking-[0.3em] text-[#c5ff00] mb-6">{t.skills.kicker}</div>
+          <h2 className="font-display text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight">{t.skills.heading}</h2>
+        </Reveal>
       </div>
 
       {/* Two ribbons running in opposite directions */}
