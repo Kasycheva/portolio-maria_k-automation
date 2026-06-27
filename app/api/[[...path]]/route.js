@@ -48,7 +48,11 @@ async function sendContactEmail({ name, email, message }) {
     }),
   });
 
-  if (!response.ok) throw new Error('Email provider rejected the request');
+  if (!response.ok) {
+    const providerError = await response.text();
+    console.error('[contact] Resend rejected request', response.status, providerError);
+    throw new Error('Email provider rejected the request');
+  }
 }
 
 export async function GET(_req, { params }) {
