@@ -94,12 +94,8 @@ export async function POST(req, { params }) {
         }
       }
       return NextResponse.json({ ok: true });
-    } catch (error) {
-      return NextResponse.json({
-        ok: false,
-        error: 'Unable to send message',
-        ...(process.env.VERCEL_ENV === 'preview' ? { detail: error.message } : {}),
-      }, { status: 500 });
+    } catch (_error) {
+      return NextResponse.json({ ok: false, error: 'Unable to send message' }, { status: 500 });
     }
   }
   return NextResponse.json({ error: 'not found' }, { status: 404 });
