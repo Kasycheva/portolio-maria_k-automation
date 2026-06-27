@@ -284,7 +284,7 @@ export default function Hero() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.06 }}
-                        className="text-white/85 hover:text-[#c5ff00] transition">
+                        className="text-white/85 [@media(hover:hover)]:hover:text-[#c5ff00] transition">
                         <a href={['#about','#skills','#cases','#workflow','#ai','#contact'][i]}>{it}</a>
                       </motion.li>
                     ))}
